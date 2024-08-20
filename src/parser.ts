@@ -17,6 +17,7 @@ interface CourseInfo {
   weeks: number[];
   day: number;
   sections: Section[];
+  weekPattern: number;
 }
 
 interface SectionTime {
@@ -100,6 +101,7 @@ function _toCourseInfos(name: string, teacher: string, position: string, periods
     sections: period.sections.map(section => ({
       section,
     })),
+    weekPattern: period.weekPattern,
   }));
 }
 

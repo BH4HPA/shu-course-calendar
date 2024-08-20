@@ -4,7 +4,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "start": "tsc && node dist/browser.js"
+    "start": "tsc && node dist/index.js"
   },
   "devDependencies": {
     "@types/node": "^20.10.6",
@@ -14,6 +14,7 @@
   "dependencies": {
     "@types/cheerio": "^0.22.22",
     "dotenv": "^16.4.5",
+    "ics": "^3.7.6",
     "prompts": "^2.4.2",
     "puppeteer-core": "^23.1.0"
   }

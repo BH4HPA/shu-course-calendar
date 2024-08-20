@@ -8,6 +8,7 @@ dotenv.config();
 export function GetCourseInfos(): Promise<{
   sectionTimes: SectionTime[];
   courseInfos: CourseInfo[];
+  termName: string;
 }> {
   return new Promise(async (resolve, reject) => {
     console.log('Starting Headless Browser..');
@@ -80,10 +81,9 @@ export function GetCourseInfos(): Promise<{
 
     await browser.close();
 
-    resolve(result);
+    resolve({
+      ...result,
+      termName: terms.find((v) => v.value === response.term)?.title || "",
+    });
   });
 }
-
-GetCourseInfos().then(({ courseInfos }) => {
-  console.log(courseInfos);
-});
