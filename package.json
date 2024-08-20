@@ -8,10 +8,13 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.6",
+    "@types/prompts": "^2.4.9",
     "typescript": "^5.2.2"
   },
   "dependencies": {
     "@types/cheerio": "^0.22.22",
+    "dotenv": "^16.4.5",
+    "prompts": "^2.4.2",
     "puppeteer-core": "^23.1.0"
   }
 }
