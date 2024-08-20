@@ -1,15 +1,17 @@
 {
-  "name": "ai-schedule-shu-cj",
+  "name": "shu-course-calendar",
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "tsc": "tsc"
+    "build": "tsc",
+    "start": "tsc && node dist/browser.js"
   },
   "devDependencies": {
-    "tslib": "^2.0.2",
-    "typescript": "^4.0.3"
+    "@types/node": "^20.10.6",
+    "typescript": "^5.2.2"
   },
   "dependencies": {
-    "@types/cheerio": "^0.22.22"
+    "@types/cheerio": "^0.22.22",
+    "puppeteer-core": "^23.1.0"
   }
 }
