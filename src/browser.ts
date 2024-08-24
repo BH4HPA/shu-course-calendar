@@ -5,7 +5,11 @@ import * as fs from 'fs';
 
 dotenv.config();
 
-export function GetCourseInfos(): Promise<{
+export function GetCourseInfos(auth: {
+  username: string;
+  password: string;
+  termId?: string;
+}): Promise<{
   sectionTimes: SectionTime[];
   courseInfos: CourseInfo[];
   termName: string;
@@ -22,9 +26,9 @@ export function GetCourseInfos(): Promise<{
     await page.goto('https://cj.shu.edu.cn');
 
     const username = await page.$('#username');
-    await username?.type(process.env.SHUSTUID!);
+    await username?.type(auth.username);
     const password = await page.$('#password');
-    await password?.type(process.env.SHUSTUPWD!);
+    await password?.type(auth.password);
 
     const submit = await page.$('#submit-button');
     console.log('Logging in..');
@@ -52,21 +56,23 @@ export function GetCourseInfos(): Promise<{
       );
     })) as { value: string; title: string }[];
 
-    const response = await prompts({
-      type: 'select',
-      name: 'term',
-      message: '为哪一个学期查询课表？',
-      choices: terms.reverse().slice(0, 3),
-    });
+    // const response = await prompts({
+    //   type: 'select',
+    //   name: 'term',
+    //   message: '为哪一个学期查询课表？',
+    //   choices: terms.reverse().slice(0, 3),
+    // });
 
-    if (!response.term) reject('未选择学期');
+    // if (!response.term) reject('未选择学期');
+
+    const termid = auth.termId || terms.reverse()[0].value;
 
     await page.evaluate((term) => {
       (document.querySelector('#AcademicTermID') as HTMLSelectElement).value =
         term;
       // @ts-ignore
       window.CtrlStudentSchedule();
-    }, response.term);
+    }, termid);
 
     await page.waitForSelector('#divEditPostponeApply');
 
@@ -92,7 +98,7 @@ export function GetCourseInfos(): Promise<{
 
     resolve({
       ...result,
-      termName: terms.find((v) => v.value === response.term)?.title || '',
+      termName: terms.find((v) => v.value === termid)?.title || '',
       name,
     });
   });

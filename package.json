@@ -13,7 +13,9 @@
   },
   "dependencies": {
     "@types/cheerio": "^0.22.22",
+    "@types/express": "^4.17.21",
     "dotenv": "^16.4.5",
+    "express": "^4.19.2",
     "ics": "^3.7.6",
     "prompts": "^2.4.2",
     "puppeteer-core": "^23.1.0"
