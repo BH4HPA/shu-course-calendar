@@ -1,5 +1,6 @@
 import prompts from 'prompts';
 import * as ics from 'ics';
+import * as fs from 'fs';
 
 import { GetCourseInfos } from './browser';
 
@@ -73,7 +74,8 @@ function generateCalendar(
   courseInfos: CourseInfo[],
   sectionTimes: SectionTime[],
   termStartDate: Date,
-  termName: string
+  termName: string,
+  name: string
 ): Promise<{
   events: ics.EventAttributes[];
   ics: string;
@@ -104,9 +106,8 @@ function generateCalendar(
               )}`,
               title: courseInfo.name,
               location: courseInfo.position,
-              categories: [courseInfo.name],
-              organizer: { name: courseInfo.teacher },
-              calName: termName,
+              description: courseInfo.teacher,
+              calName: `${termName} (${name})`,
             } as ics.EventAttributes,
           ];
         // weekPatternMode === 'other'
@@ -123,12 +124,10 @@ function generateCalendar(
               courseInfo.sections.length,
               courseInfo.sections[0].section
             ),
-            // recurrenceRule: 'FREQ=WEEKLY;INTERVAL=1;UNTIL=20240720T160000Z',
             title: courseInfo.name,
             location: courseInfo.position,
-            categories: [courseInfo.name],
-            organizer: { name: courseInfo.teacher },
-            calName: termName,
+            description: courseInfo.teacher,
+            calName: `${termName} (${name})`,
           } as ics.EventAttributes;
         }) as ics.EventAttributes[];
       }
@@ -148,7 +147,7 @@ function generateCalendar(
 }
 
 async function main() {
-  const { sectionTimes, courseInfos, termName } = await GetCourseInfos();
+  const { sectionTimes, courseInfos, termName, name } = await GetCourseInfos();
   const today = new Date().setHours(0, 0, 0, 0);
   const response = await prompts({
     type: 'date',
@@ -162,9 +161,10 @@ async function main() {
     return;
   }
   const termStart = response.termStart;
-  generateCalendar(courseInfos, sectionTimes, termStart, termName).then(
-    ({ events }) => {
+  generateCalendar(courseInfos, sectionTimes, termStart, termName, name).then(
+    ({ events, ics }) => {
       console.log(events);
+      fs.writeFileSync('./tmp/calendar.ics', ics, 'utf-8');
     }
   );
 }

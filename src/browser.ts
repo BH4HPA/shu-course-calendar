@@ -9,6 +9,7 @@ export function GetCourseInfos(): Promise<{
   sectionTimes: SectionTime[];
   courseInfos: CourseInfo[];
   termName: string;
+  name: string;
 }> {
   return new Promise(async (resolve, reject) => {
     console.log('Starting Headless Browser..');
@@ -79,11 +80,20 @@ export function GetCourseInfos(): Promise<{
       return scheduleHtmlParser();
     })) as { sectionTimes: SectionTime[]; courseInfos: CourseInfo[] };
 
+    const name = (await page.evaluate(() => {
+      return Array.prototype.find
+        .call(document.getElementsByTagName('div'), (v) =>
+          v.innerText.startsWith('姓名')
+        )
+        .innerText.split('：')[1];
+    })) as string;
+
     await browser.close();
 
     resolve({
       ...result,
-      termName: terms.find((v) => v.value === response.term)?.title || "",
+      termName: terms.find((v) => v.value === response.term)?.title || '',
+      name,
     });
   });
 }
