@@ -1,0 +1,16 @@
+version: '3'
+services:
+  shu-course-calendar:
+    image: shu-course-calendar
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "33020:9000"
+    volumes:
+      - .:/app
+    environment:
+      - NODE_ENV=development
+      - CHROMIUM_PATH=/usr/bin/google-chrome
+    working_dir: /app
+    platform: linux/amd64

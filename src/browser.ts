@@ -19,7 +19,9 @@ export function GetCourseInfos(auth: {
     console.log('Starting Headless Browser..');
     const browser = await puppeteer.launch({
       executablePath:
+        process.env.CHROMIUM_PATH ||
         '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
       headless: true,
     });
     const page = await browser.newPage();
