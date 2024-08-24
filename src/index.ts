@@ -192,9 +192,11 @@ app.post('/', async (req, res) => {
   }
 });
 app.get('/termsList', async (req, res) => {
+  console.log('Getting Term List');
   try {
     const { terms } = await GetTermList();
     res.send(terms);
+    console.log('Term List Fetched');
   } catch (e) {
     console.log(e);
     res.status(500).send(e);
