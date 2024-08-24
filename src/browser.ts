@@ -18,10 +18,8 @@ export function GetCourseInfos(auth: {
   return new Promise(async (resolve, reject) => {
     console.log('Starting Headless Browser..');
     const browser = await puppeteer.launch({
-      executablePath:
-        process.env.CHROMIUM_PATH ||
-        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      executablePath: process.env.CHROMIUM_PATH || '/usr/bin/google-chrome',
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
       headless: true,
     });
     const page = await browser.newPage();
@@ -102,6 +100,58 @@ export function GetCourseInfos(auth: {
       ...result,
       termName: terms.find((v) => v.value === termid)?.title || '',
       name,
+    });
+  });
+}
+
+export function GetTermList(): Promise<{
+  terms: { value: string; title: string }[];
+}> {
+  return new Promise(async (resolve, reject) => {
+    console.log('Starting Headless Browser..');
+    const browser = await puppeteer.launch({
+      executablePath: process.env.CHROMIUM_PATH || '/usr/bin/google-chrome',
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      headless: true,
+    });
+    const page = await browser.newPage();
+    await page.goto('https://cj.shu.edu.cn');
+
+    const username = await page.$('#username');
+    await username?.type(process.env.SHUSTUID!);
+    const password = await page.$('#password');
+    await password?.type(process.env.SHUSTUPWD!);
+
+    const submit = await page.$('#submit-button');
+    console.log('Logging in..');
+    await submit?.click();
+
+    await page.waitForNavigation({
+      timeout: 5000,
+    });
+
+    if (page.url() !== 'https://cj.shu.edu.cn/Home/StudentIndex') {
+      reject('登录失败');
+    }
+
+    await page.goto('https://cj.shu.edu.cn/StudentPortal/StudentSchedule');
+
+    await page.waitForSelector('#AcademicTermID');
+
+    const terms = (await page.evaluate(() => {
+      return Array.prototype.map.call(
+        (document.querySelector('#AcademicTermID') as HTMLSelectElement)
+          ?.options,
+        (v) => {
+          return { value: v.value, title: v.innerText };
+        }
+      );
+    })) as { value: string; title: string }[];
+
+    await browser.close();
+
+    resolve({
+      terms: terms.reverse(),
     });
   });
 }

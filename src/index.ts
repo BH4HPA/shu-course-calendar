@@ -3,7 +3,7 @@ import * as ics from 'ics';
 import * as fs from 'fs';
 import express from 'express';
 
-import { GetCourseInfos } from './browser';
+import { GetCourseInfos, GetTermList } from './browser';
 
 function convertTimeToICSTime(date: Date): ics.DateTime {
   return [
@@ -147,41 +147,45 @@ function generateCalendar(
   });
 }
 
-async function main() {
-  const app = express();
-  app.use(express.json());
-  app.post('/calendar', async (req, res) => {
-    const { username, password, termId, termStart } = req.body;
-    if (!username || !password || !termStart) {
-      res.status(400).send('Bad Request');
-      return;
-    }
-    try {
-      console.log('Generating Calendar for', username);
-      const { sectionTimes, courseInfos, termName, name } =
-        await GetCourseInfos({
-          username,
-          password,
-          termId,
-        });
-      const { ics: calendar } = await generateCalendar(
-        courseInfos,
-        sectionTimes,
-        termStart,
-        termName,
-        name
-      );
-      res.header('Content-Type', 'text/calendar');
-      res.send(calendar);
-      console.log('Calendar Generated');
-    } catch (e) {
-      console.log(e);
-      res.status(500).send(e);
-    }
-  });
-  app.listen(9000, () => {
-    console.log('Server started on http://localhost:9000');
-  });
-}
-
-main();
+const app = express();
+app.use(express.json());
+app.post('/', async (req, res) => {
+  const { username, password, termId, termStart } = req.body;
+  if (!username || !password || !termStart) {
+    res.status(400).send('Bad Request');
+    return;
+  }
+  try {
+    console.log('Generating Calendar for', username);
+    const { sectionTimes, courseInfos, termName, name } = await GetCourseInfos({
+      username,
+      password,
+      termId,
+    });
+    const { ics: calendar } = await generateCalendar(
+      courseInfos,
+      sectionTimes,
+      termStart,
+      termName,
+      name
+    );
+    res.header('Content-Type', 'text/calendar');
+    res.send(calendar);
+    console.log('Calendar Generated');
+  } catch (e) {
+    console.log(e);
+    res.status(500).send(e);
+  }
+});
+app.get('/termsList', async (req, res) => {
+  try {
+    const { terms } = await GetTermList();
+    res.send(terms);
+  } catch (e) {
+    console.log(e);
+    res.status(500).send(e);
+  }
+});
+app.listen(9000, () => {
+  console.log('Server started on http://localhost:9000');
+});

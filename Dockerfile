@@ -21,4 +21,6 @@ RUN yarn config set strict-ssl false
 
 RUN yarn install
 
+RUN yarn build
+
 CMD ["yarn", "start"]
