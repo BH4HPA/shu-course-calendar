@@ -64,6 +64,7 @@ function getWeekPatternMode(weekPattern: number) {
 function computeCourseEndTime(termStartDate: Date, courseLastWeek: number) {
   const endTime = new Date(termStartDate);
   endTime.setDate(endTime.getDate() + courseLastWeek * 7);
+  endTime.setDate(endTime.getDate() - 1);
   return `${endTime.getFullYear().toString().padStart(4, '0')}${(
     endTime.getMonth() + 1
   )
