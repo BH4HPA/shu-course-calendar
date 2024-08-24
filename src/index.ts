@@ -109,6 +109,13 @@ function generateCalendar(
               location: courseInfo.position,
               description: courseInfo.teacher,
               calName: `${termName} (${name})`,
+              alarms: [
+                {
+                  action: 'display',
+                  description: '课前二十分钟提醒',
+                  trigger: { minutes: 20, before: true },
+                },
+              ],
             } as ics.EventAttributes,
           ];
         // weekPatternMode === 'other'
@@ -129,6 +136,13 @@ function generateCalendar(
             location: courseInfo.position,
             description: courseInfo.teacher,
             calName: `${termName} (${name})`,
+            alarms: [
+              {
+                action: 'display',
+                description: '课前二十分钟提醒',
+                trigger: { minutes: 20, before: true },
+              },
+            ],
           } as ics.EventAttributes;
         }) as ics.EventAttributes[];
       }
