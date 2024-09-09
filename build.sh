@@ -1,4 +1,8 @@
 #!/bin/bash
-docker build -t ccr.ccs.tencentyun.com/shuhole/shu-course-calendar:latest --platform linux/amd64 .
+echo Going to build `git rev-parse --short HEAD` image
+docker build -t ccr.ccs.tencentyun.com/shuhole/shu-course-calendar:`git rev-parse --short HEAD` --platform linux/amd64 .
+echo Built `git rev-parse --short HEAD` image, going to push
+echo Logging in
 docker login --username=100035268144 ccr.ccs.tencentyun.com
-docker push ccr.ccs.tencentyun.com/shuhole/shu-course-calendar:latest
+echo Pushing
+docker push ccr.ccs.tencentyun.com/shuhole/shu-course-calendar:`git rev-parse --short HEAD`
