@@ -1,7 +1,6 @@
-import prompts from 'prompts';
 import * as ics from 'ics';
-import * as fs from 'fs';
 import express from 'express';
+import dayjs from 'dayjs';
 
 import { GetCourseInfos, GetTermList } from './browser';
 
@@ -32,10 +31,10 @@ function computeStartTime(
   sectionTime: SectionTime[],
   week: number,
   day: number,
-  startSection: number
+  startSection: number,
+  replacement: IHolidayReplacement[]
 ) {
-  const startTime = new Date(termStart);
-  startTime.setDate(startTime.getDate() + (week - 1) * 7 + day - 1);
+  const startTime = replaceDateByHoliday(termStart, week, day, replacement);
   startTime.setHours(
     parseInt(sectionTime[startSection - 1].startTime.split(':')[0] || '0')
   );
@@ -72,12 +71,89 @@ function computeCourseEndTime(termStartDate: Date, courseLastWeek: number) {
     .padStart(2, '0')}${endTime.getDate().toString().padStart(2, '0')}T000000Z`;
 }
 
+interface IHolidayReplacement {
+  topic: string;
+  from: string;
+  to: string;
+  replace: {
+    [replaceDate: string]: string;
+  };
+}
+
+const HolidayReplacement: IHolidayReplacement[] = [
+  {
+    topic: '中秋节',
+    from: '2024-09-15',
+    to: '2024-09-17',
+    replace: {
+      '2024-09-16': '2024-09-14',
+    },
+  },
+  {
+    topic: '国庆节',
+    from: '2024-10-01',
+    to: '2024-10-07',
+    replace: {
+      '2024-10-04': '2024-09-29',
+      '2024-10-07': '2024-10-12',
+    },
+  },
+];
+
+function convertDateToYYYYMMDD(date: Date) {
+  return `${date.getFullYear().toString().padStart(4, '0')}-${(
+    date.getMonth() + 1
+  )
+    .toString()
+    .padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+}
+
+function isInHoliday(
+  termStart: Date,
+  week: number,
+  day: number,
+  replacements: IHolidayReplacement[]
+) {
+  const startTime = new Date(termStart);
+  startTime.setDate(startTime.getDate() + (week - 1) * 7 + day - 1);
+  const date_raw = convertDateToYYYYMMDD(startTime);
+  const date = dayjs(date_raw);
+  for (const replacement of replacements) {
+    const start = dayjs(replacement.from);
+    const end = dayjs(replacement.to);
+    if (date.isAfter(start.add(-1, 'day')) && date.isBefore(end.add(1, 'day')))
+      if (!replacement.replace[date_raw]) return true;
+  }
+  return false;
+}
+
+function replaceDateByHoliday(
+  termStart: Date,
+  week: number,
+  day: number,
+  replacements: IHolidayReplacement[]
+): Date {
+  const startTime = new Date(termStart);
+  startTime.setDate(startTime.getDate() + (week - 1) * 7 + day - 1);
+  const date_raw = convertDateToYYYYMMDD(startTime);
+  const date = dayjs(date_raw);
+  for (const replacement of replacements) {
+    const start = dayjs(replacement.from);
+    const end = dayjs(replacement.to);
+    if (date.isAfter(start.add(-1, 'day')) && date.isBefore(end.add(1, 'day')))
+      if (!replacement.replace[date_raw]) return startTime;
+      else return new Date(replacement.replace[date_raw]);
+  }
+  return startTime;
+}
+
 function generateCalendar(
   courseInfos: CourseInfo[],
   sectionTimes: SectionTime[],
   termStartDate: Date,
   termName: string,
-  name: string
+  name: string,
+  holidayReplacements: IHolidayReplacement[]
 ): Promise<{
   events: ics.EventAttributes[];
   ics: string;
@@ -85,27 +161,30 @@ function generateCalendar(
   return new Promise((resolve, reject) => {
     const weekEvents: ics.EventAttributes[][] = courseInfos.map(
       (courseInfo) => {
-        const weekPatternMode = getWeekPatternMode(courseInfo.weekPattern);
-        if (weekPatternMode === 'odd-even' || weekPatternMode === 'continuous')
-          return [
-            {
+        return courseInfo.weeks
+          .filter(
+            (week) =>
+              !isInHoliday(
+                termStartDate,
+                week,
+                courseInfo.day,
+                holidayReplacements
+              )
+          )
+          .map((week) => {
+            return {
               start: computeStartTime(
                 termStartDate,
                 sectionTimes,
-                courseInfo.weeks[0],
+                week,
                 courseInfo.day,
-                courseInfo.sections[0].section
+                courseInfo.sections[0].section,
+                holidayReplacements
               ),
               duration: convertSectionLengthToDuration(
                 courseInfo.sections.length,
                 courseInfo.sections[0].section
               ),
-              recurrenceRule: `FREQ=WEEKLY;INTERVAL=${
-                weekPatternMode === 'odd-even' ? '2' : '1'
-              };UNTIL=${computeCourseEndTime(
-                termStartDate,
-                courseInfo.weeks[courseInfo.weeks.length - 1]
-              )}`,
               title: courseInfo.name,
               location: courseInfo.position,
               description: courseInfo.teacher,
@@ -117,35 +196,8 @@ function generateCalendar(
                   trigger: { minutes: 20, before: true },
                 },
               ],
-            } as ics.EventAttributes,
-          ];
-        // weekPatternMode === 'other'
-        return courseInfo.weeks.map((week) => {
-          return {
-            start: computeStartTime(
-              termStartDate,
-              sectionTimes,
-              week,
-              courseInfo.day,
-              courseInfo.sections[0].section
-            ),
-            duration: convertSectionLengthToDuration(
-              courseInfo.sections.length,
-              courseInfo.sections[0].section
-            ),
-            title: courseInfo.name,
-            location: courseInfo.position,
-            description: courseInfo.teacher,
-            calName: `${termName} (${name})`,
-            alarms: [
-              {
-                action: 'display',
-                description: '课前二十分钟提醒',
-                trigger: { minutes: 20, before: true },
-              },
-            ],
-          } as ics.EventAttributes;
-        }) as ics.EventAttributes[];
+            } as ics.EventAttributes;
+          }) as ics.EventAttributes[];
       }
     );
 
@@ -182,7 +234,8 @@ app.post('/', async (req, res) => {
       sectionTimes,
       termStart,
       termName,
-      name
+      name,
+      HolidayReplacement
     );
     res.header('Content-Type', 'text/calendar');
     res.send(calendar);
@@ -202,6 +255,9 @@ app.get('/termsList', async (req, res) => {
     console.log(e);
     res.status(500).send(e);
   }
+});
+app.get('/replacement', (req, res) => {
+  res.json(HolidayReplacement);
 });
 app.listen(9000, () => {
   console.log('Server started on http://localhost:9000');
