@@ -248,7 +248,10 @@ app.post('/', async (req, res) => {
 app.post('/onlyInfos', async (req, res) => {
   const { username, password, termId, termStart } = req.body;
   if (!username || !password || !termStart) {
-    res.status(400).send('Bad Request');
+    res.status(400).json({
+      code: -1,
+      msg: 'Bad Request',
+    });
     return;
   }
   console.log('POST /onlyinfos\nGenerating CourseInfos for', username);
@@ -259,7 +262,13 @@ app.post('/onlyInfos', async (req, res) => {
   })
     .then(({ sectionTimes, courseInfos, termName, name }) => {
       console.log('Course Info generated');
-      res.json({ sectionTimes, courseInfos, termName, name });
+      res.json({
+        code: 0,
+        sectionTimes,
+        courseInfos,
+        termName,
+        name,
+      });
     })
     .catch((e) => {
       console.log('error', e);
@@ -279,7 +288,10 @@ app.post('/infosToCalendar', async (req, res) => {
     holidayReplacement,
   } = req.body;
   if (!courseInfos || !sectionTimes || !termStart || !termName || !name) {
-    res.status(400).send('Bad Request');
+    res.status(400).json({
+      code: -1,
+      msg: 'Bad Request',
+    });
     return;
   }
   console.log('POST /infosToCalendar\nGenerating Calendar for', name);
