@@ -245,7 +245,74 @@ app.post('/', async (req, res) => {
     res.status(500).send(e);
   }
 });
+app.post('/onlyInfos', async (req, res) => {
+  const { username, password, termId, termStart } = req.body;
+  if (!username || !password || !termStart) {
+    res.status(400).send('Bad Request');
+    return;
+  }
+  console.log('POST /onlyinfos\nGenerating CourseInfos for', username);
+  GetCourseInfos({
+    username,
+    password,
+    termId,
+  })
+    .then(({ sectionTimes, courseInfos, termName, name }) => {
+      console.log('Course Info generated');
+      res.json({ sectionTimes, courseInfos, termName, name });
+    })
+    .catch((e) => {
+      console.log('error', e);
+      res.status(500).json({
+        code: -1,
+        msg: e.message || e,
+      });
+    });
+});
+app.post('/infosToCalendar', async (req, res) => {
+  const {
+    courseInfos,
+    sectionTimes,
+    termStart,
+    termName,
+    name,
+    holidayReplacement,
+  } = req.body;
+  if (!courseInfos || !sectionTimes || !termStart || !termName || !name) {
+    res.status(400).send('Bad Request');
+    return;
+  }
+  console.log('POST /infosToCalendar\nGenerating Calendar for', name);
+  generateCalendar(
+    courseInfos,
+    sectionTimes,
+    termStart,
+    termName,
+    name,
+    holidayReplacement || []
+  )
+    .then((calendar) => {
+      res.header('Content-Type', 'text/calendar');
+      res.send({
+        code: 0,
+        calendar,
+      });
+      console.log('Calendar Generated');
+    })
+    .catch((e) => {
+      console.log('error', e);
+      res.status(500).json({
+        code: -1,
+        msg: e.message || e,
+      });
+    });
+});
 app.get('/termsList', async (req, res) => {
+  const { username, password, termId, termStart } = req.body;
+  if (!username || !password || !termStart) {
+    res.status(400).send('Bad Request');
+    return;
+  }
   console.log('Getting Term List');
   try {
     const { terms } = await GetTermList();
