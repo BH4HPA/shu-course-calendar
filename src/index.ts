@@ -3,6 +3,7 @@ import express from 'express';
 import dayjs from 'dayjs';
 
 import { GetCourseInfos, GetTermList } from './browser';
+import { randomSeven, UploadFile } from './upload';
 
 function convertTimeToICSTime(date: Date): ics.DateTime {
   return [
@@ -285,16 +286,26 @@ app.post('/infosToCalendar', async (req, res) => {
     termStart,
     termName,
     name,
+    termId,
+    shuId,
     holidayReplacement,
   } = req.body;
-  if (!courseInfos || !sectionTimes || !termStart || !termName || !name) {
+  if (
+    !courseInfos ||
+    !sectionTimes ||
+    !termStart ||
+    !termName ||
+    !name ||
+    !shuId ||
+    !termId
+  ) {
     res.status(400).json({
       code: -1,
       msg: 'Bad Request',
     });
     return;
   }
-  console.log('POST /infosToCalendar\nGenerating Calendar for', name);
+  console.log('POST /infosToCalendar\nGenerating Calendar for', shuId, name);
   generateCalendar(
     courseInfos,
     sectionTimes,
@@ -304,12 +315,15 @@ app.post('/infosToCalendar', async (req, res) => {
     holidayReplacement || []
   )
     .then((calendar) => {
-      res.header('Content-Type', 'text/calendar');
-      res.send({
-        code: 0,
-        calendar,
+      console.log('Calendar Generated, Uploading...');
+      const fileName = `${termId}/${shuId}/${randomSeven()}.ics`;
+      UploadFile(fileName, Buffer.from(calendar.ics)).then((r) => {
+        console.log('Calendar Uploaded');
+        res.json({
+          code: 0,
+          url: `https://calendar-subscription.shuhole.cn/${fileName}`,
+        });
       });
-      console.log('Calendar Generated');
     })
     .catch((e) => {
       console.log('error', e);
