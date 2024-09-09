@@ -7,13 +7,13 @@ export function randomSeven(): string {
 export function UploadFile(filename: string, content: Buffer) {
   return new Promise((resolve, reject) => {
     const cos = new COS({
-      SecretId: process.env.QCLOUD_SECRET_ID,
-      SecretKey: process.env.QCLOUD_SECRET_KEY,
+      SecretId: process.env.QC_SECRET_ID,
+      SecretKey: process.env.QC_SECRET_KEY,
     });
     cos.putObject(
       {
-        Bucket: process.env.QCLOUD_BUCKET!,
-        Region: process.env.QCLOUD_REGION!,
+        Bucket: process.env.QC_BUCKET!,
+        Region: process.env.QC_REGION!,
         Key: filename,
         Body: content,
       },
