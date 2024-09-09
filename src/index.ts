@@ -308,11 +308,6 @@ app.post('/infosToCalendar', async (req, res) => {
     });
 });
 app.get('/termsList', async (req, res) => {
-  const { username, password, termId, termStart } = req.body;
-  if (!username || !password || !termStart) {
-    res.status(400).send('Bad Request');
-    return;
-  }
   console.log('Getting Term List');
   try {
     const { terms } = await GetTermList();
