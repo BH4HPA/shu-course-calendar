@@ -1,6 +1,7 @@
 import * as ics from 'ics';
 import express from 'express';
 import dayjs from 'dayjs';
+import * as fs from 'fs';
 
 import { GetCourseInfos, GetTermList } from './browser';
 import { randomSeven, UploadFile } from './upload';
@@ -215,6 +216,11 @@ function generateCalendar(
   });
 }
 
+interface UserLimit {
+  onlyInfosLastCall: number;
+  infosToCalendarLastCall: number;
+}
+
 const app = express();
 app.use(express.json());
 app.post('/', async (req, res) => {
@@ -255,7 +261,35 @@ app.post('/onlyInfos', async (req, res) => {
     });
     return;
   }
-  console.log('POST /onlyinfos\nGenerating CourseInfos for', username);
+  console.log('POST /onlyinfos', username);
+
+  fs.mkdirSync('./dist/limit', { recursive: true });
+  if (!fs.existsSync(`./dist/limit/${username}.json`)) {
+    fs.writeFileSync(
+      `./dist/limit/${username}.json`,
+      JSON.stringify({
+        onlyInfosLastCall: 0,
+        infosToCalendarLastCall: 0,
+      } as UserLimit)
+    );
+  }
+  const userLimit = JSON.parse(
+    fs.readFileSync(`./dist/limit/${username}.json`).toString()
+  ) as UserLimit;
+  const onlyInfosLastCall = userLimit.onlyInfosLastCall;
+  userLimit.onlyInfosLastCall = new Date().getTime();
+  fs.writeFileSync(`./dist/limit/${username}.json`, JSON.stringify(userLimit));
+  if (new Date().getTime() - onlyInfosLastCall < 1000 * 60) {
+    console.log('Too Many Requests', username);
+    res.status(429).json({
+      code: -1,
+      msg: 'Too Many Requests',
+    });
+    return;
+  }
+
+  console.log('Generating CourseInfos for', username);
+
   GetCourseInfos({
     username,
     password,
@@ -305,7 +339,35 @@ app.post('/infosToCalendar', async (req, res) => {
     });
     return;
   }
-  console.log('POST /infosToCalendar\nGenerating Calendar for', shuId, name);
+  console.log('POST /infosToCalendar', shuId, name);
+
+  fs.mkdirSync('./dist/limit', { recursive: true });
+  if (!fs.existsSync(`./dist/limit/${shuId}.json`)) {
+    fs.writeFileSync(
+      `./dist/limit/${shuId}.json`,
+      JSON.stringify({
+        onlyInfosLastCall: 0,
+        infosToCalendarLastCall: 0,
+      } as UserLimit)
+    );
+  }
+  const userLimit = JSON.parse(
+    fs.readFileSync(`./dist/limit/${shuId}.json`).toString()
+  ) as UserLimit;
+  const infosToCalendarLastCall = userLimit.infosToCalendarLastCall;
+  userLimit.infosToCalendarLastCall = new Date().getTime();
+  fs.writeFileSync(`./dist/limit/${shuId}.json`, JSON.stringify(userLimit));
+  if (new Date().getTime() - infosToCalendarLastCall < 1000 * 60) {
+    console.log('Too Many Requests', shuId);
+    res.status(429).json({
+      code: -1,
+      msg: 'Too Many Requests',
+    });
+    return;
+  }
+
+  console.log('Generating Calendar for', shuId, name);
+
   generateCalendar(
     courseInfos,
     sectionTimes,
