@@ -67,6 +67,13 @@ export function GetCourseInfos(auth: {
 
     const termid = auth.termId || terms.reverse()[0].value;
 
+    await page.evaluate(() => {
+      // @ts-ignore
+      window.CtrlStudentSchedule();
+    });
+
+    await page.waitForSelector('#divEditPostponeApply');
+
     await page.evaluate((term) => {
       (document.querySelector('#AcademicTermID') as HTMLSelectElement).value =
         term;
