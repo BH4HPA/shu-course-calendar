@@ -1,7 +1,8 @@
 import COS from 'cos-nodejs-sdk-v5';
+import * as tencentcloud from 'tencentcloud-sdk-nodejs';
 
-export function randomSeven(): string {
-  return Math.random().toString(36).substring(2, 9);
+export function randomFilename(): string {
+  return Math.random().toString(36).substring(2, 9) + '.ics';
 }
 
 export function UploadFile(filename: string, content: Buffer) {
@@ -22,6 +23,30 @@ export function UploadFile(filename: string, content: Buffer) {
           reject(err);
         }
         resolve(data);
+      }
+    );
+  });
+}
+
+export function RefreshCdn(url: string) {
+  return new Promise((resolve, reject) => {
+    const CdnClient = tencentcloud.cdn.v20180606.Client;
+    const client = new CdnClient({
+      credential: {
+        secretId: process.env.QC_SECRET_ID,
+        secretKey: process.env.QC_SECRET_KEY,
+      },
+      region: 'ap-shanghai',
+    });
+    client.PurgeUrlsCache(
+      {
+        Urls: [url],
+      },
+      function (err, response) {
+        if (err) {
+          reject(err);
+        }
+        resolve(response);
       }
     );
   });

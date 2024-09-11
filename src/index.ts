@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import * as fs from 'fs';
 
 import { GetCourseInfos, GetTermList } from './browser';
-import { randomSeven, UploadFile } from './upload';
+import { randomFilename, RefreshCdn, UploadFile } from './upload';
 
 function convertTimeToICSTime(date: Date): ics.DateTime {
   return [
@@ -323,6 +323,7 @@ app.post('/infosToCalendar', async (req, res) => {
     termId,
     shuId,
     holidayReplacement,
+    previousCalendar,
   } = req.body;
   if (
     !courseInfos ||
@@ -333,6 +334,13 @@ app.post('/infosToCalendar', async (req, res) => {
     !shuId ||
     !termId
   ) {
+    res.status(400).json({
+      code: -1,
+      msg: 'Bad Request',
+    });
+    return;
+  }
+  if (previousCalendar && !previousCalendar.endsWith('.ics')) {
     res.status(400).json({
       code: -1,
       msg: 'Bad Request',
@@ -378,14 +386,32 @@ app.post('/infosToCalendar', async (req, res) => {
   )
     .then((calendar) => {
       console.log('Calendar Generated, Uploading...');
-      const fileName = `${termId}/${shuId}/${randomSeven()}.ics`;
-      UploadFile(fileName, Buffer.from(calendar.ics)).then((r) => {
-        console.log('Calendar Uploaded');
-        res.json({
-          code: 0,
-          url: `https://calendar-subscription.shuhole.cn/${fileName}`,
+      const fileName = `${shuId}/${previousCalendar || randomFilename()}`;
+      UploadFile(fileName, Buffer.from(calendar.ics))
+        .then((r) => {
+          console.log('Calendar Uploaded', fileName);
+          res.json({
+            code: 0,
+            url: `https://calendar-subscription.shuhole.cn/${fileName}`,
+            usePrevious: !!previousCalendar,
+          });
+          if (previousCalendar) {
+            RefreshCdn(`https://calendar-subscription.shuhole.cn/${fileName}`)
+              .then((r) => {
+                console.log('CDN Refreshed', fileName);
+              })
+              .catch((e) => {
+                console.log('CDN Refresh Failed', e);
+              });
+          }
+        })
+        .catch((e) => {
+          console.log('Upload Failed', e);
+          res.status(500).json({
+            code: -1,
+            msg: e.message || e,
+          });
         });
-      });
     })
     .catch((e) => {
       console.log('error', e);
