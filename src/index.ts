@@ -410,6 +410,13 @@ app.post('/infosToCalendar', async (req, res) => {
           )
             .then((r) => {
               console.log('Source Uploaded', fileName);
+              RefreshCdn(`https://calendar-subscription.shuhole.cn/source/${fileName}`)
+                .then((r) => {
+                  console.log('Source File CDN Refreshed', fileName);
+                })
+                .catch((e) => {
+                  console.log('Source File CDN Refresh Failed', e);
+                });
             })
             .catch((e) => {
               console.log('Source Upload Failed', e);
