@@ -404,6 +404,16 @@ app.post('/infosToCalendar', async (req, res) => {
                 console.log('CDN Refresh Failed', e);
               });
           }
+          UploadFile(
+            'source/' + fileName,
+            Buffer.from(JSON.stringify(req.body))
+          )
+            .then((r) => {
+              console.log('Source Uploaded', fileName);
+            })
+            .catch((e) => {
+              console.log('Source Upload Failed', e);
+            });
         })
         .catch((e) => {
           console.log('Upload Failed', e);
