@@ -2,7 +2,7 @@ import { Agent } from 'https';
 import fetch from 'node-fetch';
 import 'dotenv/config';
 
-import { fetchCallbackUrl } from './login';
+import { fetchCallbackUrl, logout } from './login';
 import { logChain, moduleLog } from './logger';
 import { IElectiveBatch } from './type';
 import {
@@ -231,7 +231,9 @@ export function getAllTerms(): Promise<
       .then((token) => {
         fetchBatch(token)
           .then(async (batches) => {
-            resolve(batches);
+            logout().then(() => {
+              resolve(batches);
+            });
           })
           .catch(reject);
       })
@@ -255,11 +257,13 @@ export function getCourseInfos(
         fetchTermCourses(token, termCode)
           .then((courses) => {
             fetchStudentInfo(token, termCode).then(({ termName, name }) => {
-              resolve({
-                sectionTimes: _getSectionTimes(),
-                courseInfos: courses,
-                termName: termName,
-                name: name,
+              logout().then(() => {
+                resolve({
+                  sectionTimes: _getSectionTimes(),
+                  courseInfos: courses,
+                  termName: termName,
+                  name: name,
+                });
               });
             });
           })
