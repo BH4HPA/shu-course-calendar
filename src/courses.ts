@@ -137,15 +137,18 @@ function fetchTermCourses(token: string, code: string): Promise<CourseInfo[]> {
             r.json()
               .then((r: any) => {
                 if (r.code === 200) {
-                  const courses: CourseInfo[] = r.data.yxkc.map((e: any) =>
-                    _toCourseInfos(
-                      e.KCM,
-                      e.SKJS,
-                      e.teachingPlaceHide || '',
-                      _getPeriods(e.teachingPlace, '', false)
-                    )
-                  );
-                  resolve(courses);
+                  const courseInfos: CourseInfo[] = [];
+                  for (const e of r.data.yxkc) {
+                    courseInfos.push(
+                      ..._toCourseInfos(
+                        e.KCM,
+                        e.SKJS,
+                        e.teachingPlaceHide || '',
+                        _getPeriods(e.teachingPlace, '', false)
+                      )
+                    );
+                  }
+                  resolve(courseInfos);
                 } else {
                   reject(r.msg);
                 }
