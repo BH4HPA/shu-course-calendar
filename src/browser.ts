@@ -2,6 +2,7 @@ import * as puppeteer from 'puppeteer-core';
 import prompts from 'prompts';
 import dotenv from 'dotenv';
 import * as fs from 'fs';
+import { SectionTime, CourseInfo, scheduleHtmlParser } from './parser';
 
 dotenv.config();
 

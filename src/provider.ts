@@ -3,7 +3,7 @@
  * scheduleHtmlProvider入口函数
  * @return {string}
  */
-function scheduleHtmlProvider(): string {
+export function scheduleHtmlProvider(): string {
   if (location.hostname !== 'cj.shu.edu.cn') {
     throw new Error('当前不在cj.shu.edu.cn域内');
   }

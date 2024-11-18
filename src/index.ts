@@ -5,6 +5,8 @@ import * as fs from 'fs';
 
 import { GetCourseInfos, GetTermList } from './browser';
 import { randomFilename, RefreshCdn, UploadFile } from './upload';
+import { getAllTerms, getCourseInfos } from './courses';
+import { SectionTime, CourseInfo } from './parser';
 
 function convertTimeToICSTime(date: Date): ics.DateTime {
   return [
@@ -290,11 +292,7 @@ app.post('/onlyInfos', async (req, res) => {
 
   console.log('Generating CourseInfos for', username);
 
-  GetCourseInfos({
-    username,
-    password,
-    termId,
-  })
+  getCourseInfos(username, password, termId)
     .then(({ sectionTimes, courseInfos, termName, name }) => {
       console.log('Course Info generated');
       res.json({
@@ -410,7 +408,9 @@ app.post('/infosToCalendar', async (req, res) => {
           )
             .then((r) => {
               console.log('Source Uploaded', fileName);
-              RefreshCdn(`https://calendar-subscription.shuhole.cn/source/${fileName}`)
+              RefreshCdn(
+                `https://calendar-subscription.shuhole.cn/source/${fileName}`
+              )
                 .then((r) => {
                   console.log('Source File CDN Refreshed', fileName);
                 })
@@ -439,19 +439,17 @@ app.post('/infosToCalendar', async (req, res) => {
     });
 });
 app.get('/termsList', async (req, res) => {
-  console.log('Getting Term List');
-  try {
-    const { terms } = await GetTermList();
-    res.send(terms);
-    console.log('Term List Fetched');
-  } catch (e) {
-    console.log(e);
-    res.status(500).send(e);
-  }
+  getAllTerms()
+    .then((r) => {
+      res.json(r);
+    })
+    .catch((e) => {
+      res.status(500).send(e);
+    });
 });
 app.get('/replacement', (req, res) => {
   res.json(HolidayReplacement);
 });
-app.listen(9000, () => {
-  console.log('Server started on http://localhost:9000');
+app.listen(33134, () => {
+  console.log('Server started on http://localhost:33134');
 });
